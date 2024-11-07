@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RainbowKit Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/@rainbow-me/rainbowkit/dist/rainbowkit.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <script src="https://unpkg.com/@rainbow-me/rainbowkit/dist/rainbowkit.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Connect Your Wallet</h1>
+    <div id="wallet-connect"></div>
+
+    <script>
+        // Import necessary functions from RainbowKit and Wagmi
+        const { RainbowKitProvider, getDefaultWallets } = window.RainbowKit;
+        const { ChainId, configureChains, createClient, WagmiConfig } = window.Wagmi;
+
+        // Configure the chains you want to support
+        const { chains, provider } = configureChains(
+            [ChainId.Mainnet, ChainId.Rinkeby], // Add other chains as needed
+            [window.Wagmi.providers.injectedProvider()]
+        );
+
+        // Get default wallets
+        const { connectors } = getDefaultWallets({
+            appName: 'My RainbowKit App',
+            chains,
+        });
+
+        // Create a Wagmi client
+        const client = createClient({
+            autoConnect: true,
+            connectors: () => connectors,
+            provider,
+        });
+
+        // Function to render the wallet connect button
+        const renderWalletConnect = () => {
+            const walletConnectDiv = document.getElementById('wallet-connect');
+            walletConnectDiv.innerHTML = ''; // Clear previous content
+
+            // Create and display the connect button
+            const app = document.createElement('div');
+            app.innerHTML = `
+                <button id="connect-button" class="btn btn-primary">Connect Wallet</button>
+                <div id="address" class="mt-3"></div>
+            `;
+            walletConnectDiv.appendChild(app);
+
+            // Add event listener for the connect button
+            document.getElementById('connect-button').addEventListener('click', async () => {
+                try {
+                    const { account } = await window.Wagmi.connectors.injected();
+                    document.getElementById('address').innerText = `Connected: ${account}`;
+                } catch (error) {
+                    console.error("Connection failed:", error);
+                    document.getElementById('address').innerText = "Connection failed.";
+                }
+            });
+        };
+
+        // Render the RainbowKit provider
+        const App = () => {
+            return (
+                <WagmiConfig client={client}>
+                    <RainbowKitProvider chains={chains}>
+                        {renderWalletConnect()}
+                    </RainbowKitProvider>
+                </WagmiConfig>
+            );
+        };
+
+        // Call the render function
+        App();
+    </script>
+</body>
+</html>
